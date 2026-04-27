@@ -70,9 +70,27 @@ Each player record stores:
 - Time they were found
 - Name of the seeker who found them
 
----
+### High Score Table
+Persisted across all games — two leaderboards:
 
-## Pages
+| Leaderboard | Tracks |
+|---|---|
+| 🏃 Quickest Finders | Seekers ranked by most players found, then by average time-to-find |
+| 🫣 Longest Hiders | Hiders ranked by longest time survived before being found (or full game duration if never found) |
+
+### `scores`
+| Field | Type | Notes |
+|---|---|---|
+| id | TEXT (PK) | UUID |
+| player_name | TEXT | |
+| game_id | TEXT (FK) | |
+| role | TEXT | `hider` or `seeker` |
+| finds | INTEGER | Seekers only — number of players found |
+| avg_find_time_secs | INTEGER | Seekers only — average seconds to find each player |
+| survival_secs | INTEGER | Hiders only — seconds survived (game duration if never found) |
+| never_found | INTEGER | Hiders only — 1 if survived the whole game |
+
+---
 
 | Route | Description |
 |---|---|
@@ -112,6 +130,39 @@ Each player record stores:
 | role | TEXT | `hider` or `seeker` |
 | found_at | DATETIME | Nullable |
 | found_by | TEXT | Nullable — name of the seeker |
+
+---
+
+## Design
+
+### Aesthetic
+**Neo-brutalism** (inspired by [RetroUI](https://www.retroui.dev/themes)) meets **cinematic motion** (inspired by [Pixflow](https://pixflow.net/video-packs/)):
+- Dark background (near-black) with high-contrast neon or primary colour accents
+- Bold solid borders with offset drop shadows (neo-brutalist "lifted" effect)
+- Chunky monospace or display typography
+- Glitch / scanline CSS effects for transitions and the "timer is up" moment
+- Subtle animated backgrounds — particle drift or slow video texture overlay
+
+### Colour Palette
+| Role | Colour |
+|---|---|
+| Background | `#0a0a0a` near-black |
+| Primary accent | Neon green `#39ff14` or electric yellow `#f5e642` |
+| Danger / found | Hot pink `#ff2d78` |
+| Borders | White or primary accent at full opacity |
+| Text | White / off-white |
+
+### Key UI Moments
+- **Lobby** — players appear in a list with a punchy "pop-in" animation as they join
+- **Role reveal** — full-screen dramatic reveal with a glitch flash (seeker vs hider)
+- **Player found** — card flips or strikes through with a neon highlight
+- **Game over** — bold full-screen end state with cinematic text animation
+
+### Implementation Notes
+- Use **Tailwind CSS** + custom CSS for neo-brutalism (offset shadows via `box-shadow: 4px 4px 0px #fff`)
+- Glitch effects via CSS `@keyframes` clip-path animation — no JS needed
+- Avoid heavy video files; use CSS-only animated backgrounds (noise texture + gradient drift) for performance on mobile
+- RetroUI components are React-only — replicate the aesthetic manually in Svelte
 
 ---
 
