@@ -1,7 +1,18 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { ActionData } from './$types';
   let { form }: { form: ActionData } = $props();
   let tab = $state((form as any)?.tab ?? 'create');
+  let savedName = $state('');
+
+  onMount(() => {
+    savedName = localStorage.getItem('hide-seek-name') ?? '';
+  });
+
+  function saveName(e: SubmitEvent) {
+    const input = (e.target as HTMLFormElement).querySelector('input[name="name"]') as HTMLInputElement;
+    if (input?.value) localStorage.setItem('hide-seek-name', input.value);
+  }
 </script>
 
 <div class="container" style="max-width:480px; padding-top:4rem;">
@@ -24,16 +35,16 @@
   {/if}
 
   {#if tab === 'create'}
-    <form method="POST" action="?/create" class="card stack">
+    <form method="POST" action="?/create" class="card stack" onsubmit={saveName}>
       <div>
         <label for="create-name">Your name</label>
-        <input id="create-name" name="name" type="text" placeholder="e.g. Alex" autocomplete="off" required />
+        <input id="create-name" name="name" type="text" placeholder="e.g. Alex" autocomplete="off" required bind:value={savedName} />
       </div>
       <p class="muted">You'll set the number of seekers once everyone has joined.</p>
       <button type="submit" class="btn btn-accent full">Create Game →</button>
     </form>
   {:else}
-    <form method="POST" action="?/join" class="card stack">
+    <form method="POST" action="?/join" class="card stack" onsubmit={saveName}>
       <div>
         <label for="join-code">Game code</label>
         <input id="join-code" name="code" type="text" placeholder="e.g. HIDE-4821"
@@ -42,7 +53,7 @@
       </div>
       <div>
         <label for="join-name">Your name</label>
-        <input id="join-name" name="name" type="text" placeholder="e.g. Jordan" autocomplete="off" required />
+        <input id="join-name" name="name" type="text" placeholder="e.g. Jordan" autocomplete="off" required bind:value={savedName} />
       </div>
       <button type="submit" class="btn btn-accent full">Join Game →</button>
     </form>

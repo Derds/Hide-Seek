@@ -1,9 +1,20 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { PageData } from './$types';
   let { data }: { data: PageData } = $props();
   const { game, seekers, foundOrder, neverFound, gameDurationSecs, topFinders, longestHiders } = $derived(data);
 
   let tab = $state<'create' | 'join'>('join');
+  let savedName = $state('');
+
+  onMount(() => {
+    savedName = localStorage.getItem('hide-seek-name') ?? '';
+  });
+
+  function saveName(e: SubmitEvent) {
+    const input = (e.target as HTMLFormElement).querySelector('input[name="name"]') as HTMLInputElement;
+    if (input?.value) localStorage.setItem('hide-seek-name', input.value);
+  }
 
   function fmtSecs(s: number | null) {
     if (!s) return '—';
@@ -114,15 +125,15 @@
     </div>
 
     {#if tab === 'create'}
-      <form method="POST" action="/?/create" class="card stack">
+      <form method="POST" action="/?/create" class="card stack" onsubmit={saveName}>
         <div>
           <label for="next-create-name">Your name</label>
-          <input id="next-create-name" name="name" type="text" placeholder="e.g. Alex" autocomplete="off" required />
+          <input id="next-create-name" name="name" type="text" placeholder="e.g. Alex" autocomplete="off" required bind:value={savedName} />
         </div>
         <button type="submit" class="btn btn-accent full">Create Game →</button>
       </form>
     {:else}
-      <form method="POST" action="/?/join" class="card stack">
+      <form method="POST" action="/?/join" class="card stack" onsubmit={saveName}>
         <div>
           <label for="next-join-code">Game code</label>
           <input id="next-join-code" name="code" type="text" placeholder="e.g. HIDE-4821"
@@ -131,7 +142,7 @@
         </div>
         <div>
           <label for="next-join-name">Your name</label>
-          <input id="next-join-name" name="name" type="text" placeholder="e.g. Jordan" autocomplete="off" required />
+          <input id="next-join-name" name="name" type="text" placeholder="e.g. Jordan" autocomplete="off" required bind:value={savedName} />
         </div>
         <button type="submit" class="btn btn-accent full">Join Game →</button>
       </form>
