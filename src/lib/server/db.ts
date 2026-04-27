@@ -3,10 +3,20 @@ import { randomBytes } from 'crypto';
 import { join } from 'path';
 
 const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'hide-seek.db');
-const db = new Database(DB_PATH);
+const IS_MEMORY = DB_PATH === ':memory:';
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+// Persist a single DB connection through Vite HMR reloads in dev.
+// Memory DBs (used in tests) are always fresh.
+declare global { var __hideSeekDb: ReturnType<typeof _createDb> | undefined; }
+
+function _createDb() {
+  const instance = new Database(DB_PATH);
+  instance.pragma('journal_mode = WAL');
+  instance.pragma('foreign_keys = ON');
+  return instance;
+}
+
+const db = IS_MEMORY ? _createDb() : (global.__hideSeekDb ??= _createDb());
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS games (

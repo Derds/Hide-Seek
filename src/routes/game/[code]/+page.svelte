@@ -1,10 +1,26 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import { goto } from '$app/navigation';
   import type { PageData, ActionData } from './$types';
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
   const { game, players, suggested, isCreator } = $derived(data);
   let seekerCount = $state(game.seeker_count);
   $effect(() => { seekerCount = data.game.seeker_count; });
+
+  // Non-creator players poll every 3s so they auto-redirect when the game starts
+  let poll: ReturnType<typeof setInterval>;
+  onMount(() => {
+    if (!isCreator) {
+      poll = setInterval(async () => {
+        const res = await fetch(`/api/game/${game.id}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.game?.status === 'active') goto(`/game/${game.id}/play`);
+      }, 3000);
+    }
+  });
+  onDestroy(() => clearInterval(poll));
 </script>
 
 <div class="container">
@@ -62,7 +78,7 @@
 
   <!-- Refresh + Start -->
   <div class="row">
-    <a href="/game/{game.id}" class="btn full">↻ Refresh</a>
+    <button class="btn full" onclick={() => location.reload()}>↻ Refresh</button>
     {#if isCreator}
       <form method="POST" action="?/start" style="flex:1;">
         <button type="submit" class="btn btn-accent full"

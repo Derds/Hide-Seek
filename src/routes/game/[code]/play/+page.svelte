@@ -8,29 +8,60 @@
   const hiders  = $derived(players.filter((p: any) => p.role === 'hider'));
   const seekers = $derived(players.filter((p: any) => p.role === 'seeker'));
   const found   = $derived(hiders.filter((p: any) => p.found_at));
-  const hiding  = $derived(hiders.filter((p: any) => !p.found_at));
 
-  // Role reveal
+  // Role reveal — 3-second countdown, tap to skip
   let revealed = $state(false);
-  onMount(() => { setTimeout(() => revealed = true, 100); });
+  let countdown = $state(3);
+  let countdownInterval: ReturnType<typeof setInterval>;
 
-  // Mark-found modal (for hiders marking themselves, or seekers marking others)
+  onMount(() => {
+    countdownInterval = setInterval(() => {
+      countdown -= 1;
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        revealed = true;
+      }
+    }, 1000);
+  });
+
+  function skipReveal() {
+    clearInterval(countdownInterval);
+    revealed = true;
+  }
+
+  // Mark-found modal
   let markingPlayer: any = $state(null);
   let foundByInput = $state('');
 </script>
 
 {#if !revealed}
-  <!-- Dramatic role reveal -->
-  <div style="
-    position:fixed; inset:0; background:var(--bg);
-    display:flex; align-items:center; justify-content:center;
-    flex-direction:column; gap:1.5rem; z-index:100;
-  ">
-    <p class="muted" style="text-transform:uppercase; letter-spacing:3px;">you are a...</p>
-    <h1 style="font-size:clamp(3rem,12vw,7rem); color:{me?.role === 'seeker' ? 'var(--danger)' : 'var(--accent)'};">
+  <!-- Dramatic role reveal with countdown -->
+  <div
+    role="button"
+    tabindex="0"
+    onclick={skipReveal}
+    onkeydown={(e) => e.key === 'Enter' && skipReveal()}
+    style="
+      position:fixed; inset:0;
+      background:{me?.role === 'seeker' ? '#1a0008' : '#001a00'};
+      display:flex; align-items:center; justify-content:center;
+      flex-direction:column; gap:1.5rem; z-index:100; cursor:pointer;
+    "
+  >
+    <p class="muted" style="text-transform:uppercase; letter-spacing:4px; font-size:0.8rem;">you are a...</p>
+    <h1 class="glitch" data-text={me?.role?.toUpperCase() ?? '?'}
+      style="font-size:clamp(4rem,18vw,9rem); color:{me?.role === 'seeker' ? 'var(--danger)' : 'var(--accent)'}; line-height:1;">
       {me?.role?.toUpperCase() ?? '?'}
     </h1>
-    <p class="muted">Loading game...</p>
+    {#if me?.role === 'seeker'}
+      <p style="color:var(--danger); font-size:1.1rem; font-weight:700;">Find them all.</p>
+    {:else}
+      <p style="color:var(--accent); font-size:1.1rem; font-weight:700;">Don't get caught.</p>
+    {/if}
+    <div style="margin-top:1rem; display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+      <p style="font-size:3rem; font-weight:900; color:var(--fg);">{countdown}</p>
+      <p class="muted" style="font-size:0.75rem; letter-spacing:2px;">TAP TO CONTINUE</p>
+    </div>
   </div>
 {:else}
 
@@ -75,7 +106,7 @@
       </div>
       <div class="spacer"></div>
       <div class="row" style="gap:0.5rem;">
-        <a href="/game/{game.id}/play" class="btn">↻ Refresh</a>
+        <button class="btn" onclick={() => location.reload()}>↻ Refresh</button>
         {#if isCreator}
           <form method="POST" action="?/endGame">
             <button type="submit" class="btn btn-danger">End Game</button>
