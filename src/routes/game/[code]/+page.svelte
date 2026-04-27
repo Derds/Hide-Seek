@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import type { PageData, ActionData } from './$types';
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -8,17 +8,15 @@
   let seekerCount = $state(data.game.seeker_count);
   $effect(() => { seekerCount = data.game.seeker_count; });
 
-  // Non-creator players poll every 3s so they auto-redirect when the game starts
+  // Redirect as soon as game goes active (works for all users via invalidateAll)
+  $effect(() => {
+    if (game.status === 'active') goto(`/game/${game.id}/play`);
+  });
+
+  // Poll for all users — refreshes player list and detects game start
   let poll: ReturnType<typeof setInterval>;
   onMount(() => {
-    if (!isCreator) {
-      poll = setInterval(async () => {
-        const res = await fetch(`/api/game/${game.id}`);
-        if (!res.ok) return;
-        const json = await res.json();
-        if (json.game?.status === 'active') goto(`/game/${game.id}/play`);
-      }, 3000);
-    }
+    poll = setInterval(() => invalidateAll(), 3000);
   });
   onDestroy(() => clearInterval(poll));
 </script>
@@ -78,7 +76,7 @@
 
   <!-- Refresh + Start -->
   <div class="row">
-    <button class="btn full" onclick={() => location.reload()}>↻ Refresh</button>
+    <button class="btn full" onclick={() => invalidateAll()}>↻ Refresh</button>
     {#if isCreator}
       <form method="POST" action="?/start" style="flex:1;">
         <button type="submit" class="btn btn-accent full"
