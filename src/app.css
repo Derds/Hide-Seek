@@ -344,6 +344,7 @@ html.no-fx *::after {
 /* ── Respect system reduced-motion preference by default ─ */
 @media (prefers-reduced-motion: reduce) {
   body::before { animation: none; }
+  .scan-beam { display: none; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
