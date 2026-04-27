@@ -11,10 +11,10 @@
   </div>
 
   <div class="row" style="margin-bottom:1.5rem; gap:0;">
-    <button class="btn full" class:btn-accent={tab === 'create'} onclick={() => tab = 'create'}>
+    <button class="btn full" class:btn-accent={tab === 'create'} class:btn-tab={tab !== 'create'} onclick={() => tab = 'create'}>
       Create Game
     </button>
-    <button class="btn full" class:btn-accent={tab === 'join'} onclick={() => tab = 'join'}>
+    <button class="btn full" class:btn-accent={tab === 'join'} class:btn-tab={tab !== 'join'} onclick={() => tab = 'join'}>
       Join Game
     </button>
   </div>

@@ -5,7 +5,7 @@
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
   const { game, players, suggested, isCreator } = $derived(data);
-  let seekerCount = $state(game.seeker_count);
+  let seekerCount = $state(data.game.seeker_count);
   $effect(() => { seekerCount = data.game.seeker_count; });
 
   // Non-creator players poll every 3s so they auto-redirect when the game starts
@@ -44,8 +44,8 @@
     <p class="badge badge-pink" style="margin-bottom:1rem;">{(form as any).error}</p>
   {/if}
 
-  <!-- Seeker count (creator only) -->
-  {#if isCreator}
+  <!-- Seeker count (creator only, once 4+ players have joined) -->
+  {#if isCreator && players.length > 3}
     <div class="card stack" style="margin-bottom:1.5rem;">
       <div class="row">
         <h3>Seekers</h3>
@@ -57,7 +57,7 @@
         <button type="submit" class="btn">Set</button>
       </form>
     </div>
-  {:else}
+  {:else if players.length > 3}
     <div class="card" style="margin-bottom:1.5rem;">
       <p class="muted">👁 Seekers: <strong style="color:var(--fg)">{game.seeker_count}</strong> will be randomly chosen when the game starts</p>
     </div>

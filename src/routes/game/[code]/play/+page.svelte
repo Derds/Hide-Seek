@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { invalidateAll } from '$app/navigation';
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -9,12 +10,20 @@
   const seekers = $derived(players.filter((p: any) => p.role === 'seeker'));
   const found   = $derived(hiders.filter((p: any) => p.found_at));
 
-  // Role reveal — 3-second countdown, tap to skip
+  // Role reveal — 5-second countdown, tap to skip
   let revealed = $state(false);
-  let countdown = $state(3);
+  let countdown = $state(5);
   let countdownInterval: ReturnType<typeof setInterval>;
 
+  // Found notification — triggered when polling detects remote mark
+  let initiallyFound = false;
+  let justFound = $state(false);
+
+  let pollInterval: ReturnType<typeof setInterval>;
+
   onMount(() => {
+    initiallyFound = !!me?.found_at;
+
     countdownInterval = setInterval(() => {
       countdown -= 1;
       if (countdown <= 0) {
@@ -22,6 +31,20 @@
         revealed = true;
       }
     }, 1000);
+
+    // Poll for status updates so hiders learn when they're found
+    pollInterval = setInterval(() => invalidateAll(), 5000);
+  });
+
+  onDestroy(() => {
+    clearInterval(countdownInterval);
+    clearInterval(pollInterval);
+  });
+
+  $effect(() => {
+    if (revealed && me?.found_at && !initiallyFound && !justFound) {
+      justFound = true;
+    }
   });
 
   function skipReveal() {
@@ -31,7 +54,6 @@
 
   // Mark-found modal
   let markingPlayer: any = $state(null);
-  let foundByInput = $state('');
 </script>
 
 {#if !revealed}
@@ -65,6 +87,29 @@
   </div>
 {:else}
 
+  <!-- "You've been found" notification overlay -->
+  {#if justFound}
+    <div
+      role="button"
+      tabindex="0"
+      onclick={() => justFound = false}
+      onkeydown={(e) => e.key === 'Enter' && (justFound = false)}
+      style="
+        position:fixed; inset:0;
+        background:rgba(20,0,0,0.96);
+        display:flex; align-items:center; justify-content:center;
+        flex-direction:column; gap:1.5rem; z-index:100; cursor:pointer;
+      "
+    >
+      <p class="muted" style="text-transform:uppercase; letter-spacing:4px; font-size:0.8rem;">oh no...</p>
+      <h1 class="glitch" data-text="FOUND!" style="font-size:clamp(4rem,18vw,8rem); color:var(--danger); line-height:1;">FOUND!</h1>
+      <p style="color:var(--fg); font-size:1.2rem; font-weight:700;">
+        by <span style="color:var(--danger);">{me?.found_by}</span>
+      </p>
+      <p class="muted" style="font-size:0.75rem; letter-spacing:2px; margin-top:0.5rem;">TAP TO CONTINUE</p>
+    </div>
+  {/if}
+
   <!-- Mark-found modal -->
   {#if markingPlayer}
     <div style="
@@ -77,17 +122,19 @@
         <h3>Mark <span style="color:var(--accent)">{markingPlayer.name}</span> as found</h3>
         <input type="hidden" name="playerId" value={markingPlayer.id} />
         <div>
-          <label for="found-by">Found by (seeker name)</label>
-          <input id="found-by" name="foundBy" type="text"
-            placeholder="e.g. Riley" autocomplete="off"
-            bind:value={foundByInput} required />
+          <label for="found-by">Found by</label>
+          <select id="found-by" name="foundBy" required>
+            {#each seekers as s}
+              <option value={s.name}>{s.name}</option>
+            {/each}
+          </select>
         </div>
         {#if (form as any)?.error}
           <p class="badge badge-pink">{(form as any).error}</p>
         {/if}
         <div class="row">
-          <button type="button" class="btn btn-ghost" onclick={() => markingPlayer = null}>Cancel</button>
-          <button type="submit" class="btn btn-danger full">Confirm Found</button>
+          <button type="button" class="btn" style="flex:1;" onclick={() => markingPlayer = null}>Cancel</button>
+          <button type="submit" class="btn btn-danger" style="flex:1;">Confirm Found</button>
         </div>
       </form>
     </div>
@@ -106,7 +153,7 @@
       </div>
       <div class="spacer"></div>
       <div class="row" style="gap:0.5rem;">
-        <button class="btn" onclick={() => location.reload()}>↻ Refresh</button>
+        <button class="btn" onclick={() => invalidateAll()}>↻ Refresh</button>
         {#if isCreator}
           <form method="POST" action="?/endGame">
             <button type="submit" class="btn btn-danger">End Game</button>
@@ -133,7 +180,7 @@
         {:else}
           <p style="color:var(--accent); font-weight:700;">🟢 You're still hiding!</p>
           <button class="btn btn-danger"
-            onclick={() => { markingPlayer = me; foundByInput = ''; }}>
+            onclick={() => { markingPlayer = me; }}>
             I've been found
           </button>
         {/if}
@@ -168,7 +215,7 @@
           </div>
           {#if me?.role === 'seeker' && !h.found_at}
             <button class="btn" style="padding:0.35rem 0.75rem; font-size:0.8rem;"
-              onclick={() => { markingPlayer = h; foundByInput = me.name; }}>
+              onclick={() => { markingPlayer = h; }}>
               Found
             </button>
           {/if}

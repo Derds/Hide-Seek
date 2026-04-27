@@ -3,6 +3,8 @@
   let { data }: { data: PageData } = $props();
   const { game, seekers, foundOrder, neverFound, gameDurationSecs, topFinders, longestHiders } = $derived(data);
 
+  let tab = $state<'create' | 'join'>('join');
+
   function fmtSecs(s: number | null) {
     if (!s) return '—';
     const m = Math.floor(s / 60), sec = s % 60;
@@ -62,16 +64,16 @@
   <hr class="divider" />
 
   <!-- Global leaderboards -->
-  <h2 style="margin-bottom:1.5rem;">🏆 All-time leaderboard</h2>
+  <h2 class="glitch-slow" data-text="🏆 All-time leaderboard" style="margin-bottom:1.5rem;">🏆 All-time leaderboard</h2>
 
   <div style="display:grid; gap:1.5rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
     <div class="card stack" style="gap:0;">
-      <h3 style="margin-bottom:0.75rem; color:var(--danger);">🏃 Quickest finders</h3>
+      <h3 class="glitch-slow" data-text="🏃 Quickest finders" style="margin-bottom:0.75rem; color:var(--danger);">🏃 Quickest finders</h3>
       {#each (topFinders as any[]) as row, i}
         <div class="player-row">
           <div class="row" style="gap:0.5rem;">
             <span class="muted" style="min-width:1.5rem;">#{i + 1}</span>
-            <span class="player-name">{row.player_name}</span>
+            <span class="player-name" class:glitch-slow={i === 0} data-text={i === 0 ? row.player_name : undefined}>{row.player_name}</span>
           </div>
           <span class="muted" style="font-size:0.8rem;">{row.total_finds} finds</span>
         </div>
@@ -81,12 +83,12 @@
     </div>
 
     <div class="card stack" style="gap:0;">
-      <h3 style="margin-bottom:0.75rem; color:var(--accent);">🫣 Longest hiders</h3>
+      <h3 class="glitch-slow" data-text="🫣 Longest hiders" style="margin-bottom:0.75rem; color:var(--accent);">🫣 Longest hiders</h3>
       {#each (longestHiders as any[]) as row, i}
         <div class="player-row">
           <div class="row" style="gap:0.5rem;">
             <span class="muted" style="min-width:1.5rem;">#{i + 1}</span>
-            <span class="player-name">{row.player_name}</span>
+            <span class="player-name" class:glitch-slow={i === 0} data-text={i === 0 ? row.player_name : undefined}>{row.player_name}</span>
           </div>
           <span class="muted" style="font-size:0.8rem;">{fmtSecs(row.best_survival_secs)}</span>
         </div>
@@ -96,7 +98,43 @@
     </div>
   </div>
 
-  <div class="center" style="margin-top:2.5rem;">
-    <a href="/" class="btn btn-accent">Play again →</a>
+  <hr class="divider" style="margin-top:2.5rem;" />
+
+  <!-- Play next game -->
+  <h2 style="margin:2rem 0 1.25rem; text-align:center;">Play another?</h2>
+
+  <div style="max-width:440px; margin:0 auto;">
+    <div class="row" style="margin-bottom:1.25rem; gap:0;">
+      <button class="btn full" class:btn-accent={tab === 'create'} class:btn-tab={tab !== 'create'} onclick={() => tab = 'create'}>
+        Create Game
+      </button>
+      <button class="btn full" class:btn-accent={tab === 'join'} class:btn-tab={tab !== 'join'} onclick={() => tab = 'join'}>
+        Join Game
+      </button>
+    </div>
+
+    {#if tab === 'create'}
+      <form method="POST" action="/?/create" class="card stack">
+        <div>
+          <label for="next-create-name">Your name</label>
+          <input id="next-create-name" name="name" type="text" placeholder="e.g. Alex" autocomplete="off" required />
+        </div>
+        <button type="submit" class="btn btn-accent full">Create Game →</button>
+      </form>
+    {:else}
+      <form method="POST" action="/?/join" class="card stack">
+        <div>
+          <label for="next-join-code">Game code</label>
+          <input id="next-join-code" name="code" type="text" placeholder="e.g. HIDE-4821"
+            style="text-transform:uppercase; letter-spacing:2px;"
+            autocomplete="off" required />
+        </div>
+        <div>
+          <label for="next-join-name">Your name</label>
+          <input id="next-join-name" name="name" type="text" placeholder="e.g. Jordan" autocomplete="off" required />
+        </div>
+        <button type="submit" class="btn btn-accent full">Join Game →</button>
+      </form>
+    {/if}
   </div>
 </div>

@@ -1,11 +1,11 @@
 :root {
-  --bg: #0a0a0a;
-  --bg-2: #141414;
+  --bg: #12091e;
+  --bg-2: #1c1030;
   --fg: #f0f0f0;
   --accent: #39ff14;
   --danger: #ff2d78;
   --warn: #f5e642;
-  --muted: #666;
+  --muted: #7a6d8a;
   --border: 3px solid var(--fg);
   --shadow: 4px 4px 0px var(--fg);
   --shadow-accent: 4px 4px 0px var(--accent);
@@ -15,6 +15,49 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Comic book background texture ───────────────────── */
+
+/* Layer 1: halftone dot grid — two offset grids for depth */
+html {
+  background:
+    radial-gradient(circle, rgba(180,130,255,0.2) 1.5px, transparent 1.5px),
+    radial-gradient(circle, rgba(180,130,255,0.09) 1px,  transparent 1px),
+    var(--bg);
+  background-size: 20px 20px, 8px 8px;
+  background-position: 0 0, 10px 10px;
+}
+
+/* Layer 2: scanlines — static grid texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Layer 3: vignette — accent glow in centre, deep dark at edges */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(120, 60, 200, 0.15) 0%,
+    transparent 55%,
+    rgba(5, 0, 15, 0.8) 100%
+  );
+  pointer-events: none;
+  z-index: 9997;
+}
 
 html, body {
   background: var(--bg);
@@ -52,7 +95,11 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   background: var(--fg);
   color: var(--bg);
   box-shadow: var(--shadow);
-  transition: transform 0.08s, box-shadow 0.08s;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s, color 0.1s;
+}
+.btn:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--fg);
 }
 .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--fg); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -63,6 +110,11 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   border-color: var(--accent);
   box-shadow: var(--shadow-accent);
 }
+.btn-accent:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--accent);
+  filter: brightness(1.15);
+}
 .btn-accent:active { box-shadow: 1px 1px 0 var(--accent); }
 
 .btn-danger {
@@ -71,12 +123,37 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   border-color: var(--danger);
   box-shadow: var(--shadow-danger);
 }
+.btn-danger:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--danger);
+  filter: brightness(1.15);
+}
 .btn-danger:active { box-shadow: 1px 1px 0 var(--danger); }
 
 .btn-ghost {
   background: transparent;
   color: var(--fg);
   box-shadow: none;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  box-shadow: none;
+  transform: translate(-1px, -1px);
+}
+
+/* Tab-style inactive button — outline only, clearly secondary */
+.btn-tab {
+  background: transparent;
+  color: var(--muted);
+  border: 2px solid rgba(255,255,255,0.18);
+  box-shadow: none;
+}
+.btn-tab:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--fg);
+  background: rgba(255,255,255,0.05);
+  box-shadow: none;
+  transform: translate(-1px, -1px);
 }
 
 /* ── Inputs ───────────────────────────────────────────── */
@@ -149,6 +226,28 @@ label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spa
   89% { clip-path: inset(40% 0 30% 0); transform: translate(2px, 0); }
 }
 
+/* Slower, subtler glitch for leaderboard names */
+.glitch-slow {
+  position: relative;
+  display: inline-block;
+}
+.glitch-slow::before,
+.glitch-slow::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.glitch-slow::before {
+  color: var(--danger);
+  animation: glitch-top 6s infinite linear;
+}
+.glitch-slow::after {
+  color: var(--accent);
+  animation: glitch-bot 6s infinite linear;
+}
+
 /* ── Reveal animation ─────────────────────────────────── */
 @keyframes reveal-flicker {
   0%   { opacity: 0; }
@@ -185,3 +284,69 @@ label { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spa
 .muted   { color: var(--muted); font-size: 0.85rem; }
 .center  { text-align: center; }
 .full    { width: 100%; }
+
+/* ── FX toggle button ─────────────────────────────────── */
+.fx-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 10000;
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  background: rgba(28, 16, 48, 0.85);
+  color: var(--muted);
+  border: 1px solid var(--muted);
+  backdrop-filter: blur(4px);
+  transition: color 0.2s, border-color 0.2s;
+}
+.fx-toggle:hover { color: var(--fg); border-color: var(--fg); }
+
+/* ── Scan beam: sweeps top→bottom, clearly visible ─────── */
+.scan-beam {
+  position: fixed;
+  left: 0; right: 0;
+  height: 140px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(180, 130, 255, 0.04) 25%,
+    rgba(180, 130, 255, 0.09) 50%,
+    rgba(180, 130, 255, 0.04) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 9999;
+  animation: scan-beam 12s linear infinite;
+  top: -140px;
+}
+
+@keyframes scan-beam {
+  0%   { top: -140px; }
+  100% { top: 100vh; }
+}
+
+/* ── No-FX mode: disable all animations & scanlines ───── */
+html.no-fx body::before { animation: none; opacity: 0.15; }
+html.no-fx .scan-beam   { display: none; }
+html.no-fx *,
+html.no-fx *::before,
+html.no-fx *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* ── Respect system reduced-motion preference by default ─ */
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
